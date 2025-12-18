@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#10B981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Keranjang Kita - Keluarga</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Inconsolata:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        html, body { overscroll-behavior-y: none; touch-action: manipulation; }
+        body { font-family: 'Quicksand', sans-serif; background-color: #f0fdf4; display: flex; justify-content: center; min-height: 100vh; min-height: 100dvh; margin: 0; background-image: radial-gradient(#10B981 0.5px, transparent 0.5px); background-size: 20px 20px; }
+        #app-wrapper { width: 100%; max-width: 480px; background-color: white; height: 100vh; height: 100dvh; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #f1f1f1; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .fade-in { animation: fadeIn 0.3s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-up { animation: slideUp 0.3s ease-out; } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .fab { position: fixed; bottom: 30px; right: 20px; width: 64px; height: 64px; background: linear-gradient(135deg, #10B981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4); cursor: pointer; z-index: 40; transition: transform 0.2s; -webkit-tap-highlight-color: transparent; }
+        .fab:active { transform: scale(0.90); }
+        @media (min-width: 480px) { .fab { right: calc(50% - 220px); bottom: 40px; } .fab:hover { transform: scale(1.1) rotate(90deg); } }
+        .requester-option { transition: all 0.2s; border: 2px solid transparent; opacity: 0.6; filter: grayscale(0.5); } .requester-option.active { border-color: #10B981; background-color: #ecfdf5; opacity: 1; filter: grayscale(0); transform: scale(1.05); }
+        .badge-user { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 700; display: inline-block; margin-top: 4px; }
+        #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 12px; position: fixed; z-index: 100; left: 50%; bottom: 100px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: 0.3s; }
+        #toast.show { visibility: visible; opacity: 1; bottom: 110px; }
+        .font-receipt { font-family: 'Inconsolata', monospace; }
+        .receipt-paper { background: #fff; position: relative; border: 1px solid #eee; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .receipt-paper::after { content: ""; position: absolute; left: 0; bottom: -8px; width: 100%; height: 10px; background: radial-gradient(circle, transparent, transparent 50%, #fff 50%, #fff 100%) -7px -2px / 15px 15px repeat-x; filter: drop-shadow(0 2px 0 #ddd); }
+        .receipt-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .receipt-table td { padding: 4px 0; vertical-align: top; font-size: 13px; font-family: 'Inconsolata', monospace; border-bottom: 1px dashed #e5e7eb; }
+        .receipt-table tr:last-child td { border-bottom: none; }
+        .col-item { width: 55%; text-align: left; padding-right: 5px; } .col-user { width: 15%; text-align: right; color: #9ca3af; font-size: 11px; white-space: nowrap; } .col-price { width: 30%; text-align: right; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="app-wrapper">
+        <div id="main-app" class="flex flex-col h-full fade-in">
+            <header class="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 rounded-b-[40px] shadow-lg z-10 sticky top-0">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <p class="text-green-100 text-xs mb-1 font-semibold tracking-wider">Gak Ada Lagi Drama 'Lupa Tititpan'</p>
+                        <h1 class="text-2xl font-bold">Keranjang Kita 🛒</h1>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openReportModal()" class="bg-white/20 hover:bg-white/30 p-2 rounded-full backdrop-blur-sm active:scale-90 transition-transform"><i class="fas fa-chart-pie text-white"></i></button>
+                        <button onclick="openResetModal()" class="bg-white/20 hover:bg-white/30 p-2 rounded-full backdrop-blur-sm active:scale-90 transition-transform" title="Mulai Baru"><i class="fas fa-redo-alt text-white"></i></button>
+                    </div>
+                </div>
+                <div class="bg-black/20 p-4 rounded-2xl backdrop-blur-md cursor-pointer hover:bg-black/30 transition-colors" onclick="openReportModal()">
+                    <div class="flex justify-between items-end mb-3 pb-3 border-b border-white/20">
+                        <div>
+                            <div class="flex items-center gap-1 mb-1 opacity-80">
+                                <p class="text-[10px] text-green-100 uppercase tracking-wide">Uang Keluar</p>
+                                <i class="fas fa-check-circle text-[10px] text-green-200"></i>
+                            </div>
+                            <p class="text-3xl font-bold text-yellow-300 truncate max-w-[200px]" id="total-spent">Rp 0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-green-100 uppercase tracking-wide mb-1 opacity-80">Item Dibeli</p>
+                            <p class="text-xl font-bold text-white" id="item-count">0</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs mb-2 font-semibold text-green-50">
+                        <span id="progress-text">0/0 Selesai</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="w-full bg-white/20 rounded-full h-2.5 overflow-hidden">
+                        <div id="progress-bar" class="bg-white h-full rounded-full transition-all duration-700 w-0"></div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 p-5 pb-32 overflow-y-auto" id="shopping-list">
+                <div id="empty-state" class="hidden flex flex-col items-center justify-center mt-20 text-gray-400 opacity-60">
+                    <i class="fas fa-carrot text-6xl mb-4 text-green-200"></i>
+                    <p class="font-medium">Keranjang masih kosong.</p>
+                </div>
+            </main>
+
+            <button class="fab" onclick="openModal()"><i class="fas fa-plus"></i></button>
+        </div>
+
+        <div id="modal" class="fixed inset-0 bg-black/60 hidden items-end justify-center z-50 backdrop-blur-sm transition-opacity">
+            <div class="bg-white w-full max-w-[480px] p-6 rounded-t-[30px] slide-up shadow-2xl overflow-y-auto max-h-[90vh]">
+                <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Tambah Titipan</h3>
+                <div class="relative mb-6">
+                    <label class="text-xs font-bold text-gray-400 ml-1 mb-1 block">NAMA BARANG</label>
+                    <input type="text" id="input-item" class="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-3 pl-12 pr-4 text-lg font-medium focus:outline-none focus:border-green-500 focus:bg-white transition-colors" placeholder="Misal: Beras 5kg..." autocomplete="off">
+                    <i class="fas fa-shopping-bag absolute left-4 top-[38px] text-gray-400"></i>
+                </div>
+                <div class="mb-6">
+                    <label class="text-xs font-bold text-gray-400 ml-1 mb-2 block">SIAPA YANG NITIP?</label>
+                    <div class="grid grid-cols-4 gap-2 mb-3">
+                        <button type="button" onclick="selectRequester('Ayah', '👨🏻', 'bg-blue-100 text-blue-700', this)" class="requester-option active p-2 rounded-xl bg-gray-50 flex flex-col items-center justify-center gap-1"><span class="text-2xl">👨🏻</span><span class="text-[10px] font-bold text-gray-600">Ayah</span></button>
+                        <button type="button" onclick="selectRequester('Bunda', '👩🏻', 'bg-pink-100 text-pink-700', this)" class="requester-option p-2 rounded-xl bg-gray-50 flex flex-col items-center justify-center gap-1"><span class="text-2xl">👩🏻</span><span class="text-[10px] font-bold text-gray-600">Bunda</span></button>
+                        <button type="button" onclick="selectRequester('Kakak', '👦🏻', 'bg-yellow-100 text-yellow-700', this)" class="requester-option p-2 rounded-xl bg-gray-50 flex flex-col items-center justify-center gap-1"><span class="text-2xl">👦🏻</span><span class="text-[10px] font-bold text-gray-600">Kakak</span></button>
+                        <button type="button" onclick="selectRequester('Adek', '👧🏻', 'bg-purple-100 text-purple-700', this)" class="requester-option p-2 rounded-xl bg-gray-50 flex flex-col items-center justify-center gap-1"><span class="text-2xl">👧🏻</span><span class="text-[10px] font-bold text-gray-600">Adek</span></button>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="custom-requester-input" class="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-3 pl-10 pr-4 text-sm font-medium focus:outline-none focus:border-green-500 transition-colors" placeholder="Atau tulis nama lain..." autocomplete="off" oninput="handleCustomRequester(this)">
+                        <i class="fas fa-user-edit absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200">Batal</button>
+                    <button onclick="addItem()" class="flex-1 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200">Simpan</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="price-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 backdrop-blur-sm p-4 transition-opacity">
+            <div class="bg-white w-full max-w-sm p-6 rounded-3xl shadow-2xl transform scale-100">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3"><i class="fas fa-tags text-green-600 text-2xl"></i></div>
+                    <h3 class="text-xl font-bold text-gray-800" id="price-item-name">Nama Barang</h3>
+                    <p class="text-sm text-gray-500">Masukkan Harga Beli (Realita)</p>
+                </div>
+                <div class="relative mb-6">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">Rp</span>
+                    <input type="text" inputmode="numeric" pattern="[0-9]*" id="checklist-price-input" class="w-full bg-gray-50 border-2 border-green-200 rounded-2xl py-4 pl-12 pr-4 text-2xl font-bold text-gray-800 focus:outline-none focus:border-green-500 text-center" placeholder="0" autocomplete="off" oninput="formatRupiahTyping(this)">
+                </div>
+                <button onclick="confirmItemPrice()" class="w-full py-4 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200">Oke, Sudah Dibeli! <i class="fas fa-check ml-1"></i></button>
+            </div>
+        </div>
+
+        <div id="cancel-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-xs p-6 rounded-3xl shadow-2xl text-center">
+                <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500 text-2xl"><i class="fas fa-undo"></i></div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Batalkan Pembelian?</h3>
+                <p class="text-gray-500 text-sm mb-6">Barang ini akan ditandai kembali sebagai "Belum Dibeli".</p>
+                <div class="flex gap-3">
+                    <button onclick="closeCancelModal()" class="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Jangan</button>
+                    <button onclick="confirmUncheck()" class="flex-1 py-3 rounded-xl font-bold text-white bg-orange-500 shadow-lg shadow-orange-200">Ya, Batal</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="reset-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-xs p-6 rounded-3xl shadow-2xl text-center">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500 text-2xl"><i class="fas fa-redo-alt"></i></div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Mulai Belanja Baru?</h3>
+                <p class="text-gray-500 text-sm mb-6">Barang yang sudah dibeli akan disimpan ke Riwayat. Sisanya akan dihapus.</p>
+                <div class="flex gap-3">
+                    <button onclick="closeResetModal()" class="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Batal</button>
+                    <button onclick="confirmNewSession()" class="flex-1 py-3 rounded-xl font-bold text-white bg-blue-600 shadow-lg shadow-blue-200">Ya, Mulai Baru</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="receipt-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[70] backdrop-blur-sm p-4 transition-opacity overflow-y-auto">
+            <div class="w-full max-w-sm flex flex-col items-center">
+                <div id="receipt-content" class="w-full receipt-paper p-6 mb-6 text-gray-800 rounded-t-lg bg-white">
+                    <div class="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4">
+                        <h2 class="font-bold text-2xl tracking-widest uppercase mb-1">KERANJANG KITA</h2>
+                        <p class="font-receipt text-xs text-gray-500">Gak Ada Lagi Drama 'Lupa Titipan'</p>
+                        <p class="font-receipt text-xs mt-2" id="receipt-date">Tanggal: -</p>
+                    </div>
+                    <table class="receipt-table" id="receipt-items-table">
+                        <tbody id="receipt-items-body"></tbody>
+                    </table>
+                    <div class="border-t-2 border-dashed border-gray-300 pt-3 font-receipt">
+                        <div class="flex justify-between font-bold text-lg"><span>TOTAL</span><span id="receipt-total">Rp 0</span></div>
+                        <div class="text-center mt-6 text-xs text-gray-500"><p>Terima kasih!</p></div>
+                    </div>
+                    <div class="text-center mt-4 opacity-30 text-[10px]">App by Keranjang Kita</div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 w-full">
+                    <button onclick="saveAsImage()" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl active:scale-95"><i class="fas fa-image text-xl mb-1"></i><span class="text-[10px] font-bold">Gambar</span></button>
+                    <button onclick="printReceipt()" class="flex flex-col items-center justify-center bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl active:scale-95"><i class="fas fa-file-pdf text-xl mb-1"></i><span class="text-[10px] font-bold">PDF/Print</span></button>
+                    <button onclick="copyReceiptText()" class="flex flex-col items-center justify-center bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl active:scale-95"><i class="fas fa-copy text-xl mb-1"></i><span class="text-[10px] font-bold">Salin Teks</span></button>
+                </div>
+                <button onclick="closeReceiptModal()" class="mt-6 w-full py-3 rounded-xl font-bold text-gray-600 bg-white border-2 border-gray-200 hover:bg-gray-50">Tutup Struk</button>
+            </div>
+        </div>
+
+        <div id="report-modal" class="fixed inset-0 bg-black/60 hidden items-end justify-center z-50 backdrop-blur-sm transition-opacity">
+            <div class="bg-white w-full max-w-[480px] p-6 rounded-t-[30px] slide-up shadow-2xl h-[85dvh] flex flex-col">
+                <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Laporan</h3>
+                    <button onclick="closeReportModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto pr-1">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-2xl text-white shadow-lg mb-4 relative overflow-hidden">
+                        <i class="fas fa-calendar-day absolute -right-4 -bottom-4 text-8xl text-white opacity-10"></i>
+                        <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">HARI INI</p>
+                        <h2 class="text-3xl font-bold" id="report-today">Rp 0</h2>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-500 to-indigo-600 p-5 rounded-2xl text-white shadow-lg mb-6 relative overflow-hidden">
+                        <i class="fas fa-chart-line absolute -right-4 -bottom-4 text-8xl text-white opacity-10"></i>
+                        <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">BULAN INI</p>
+                        <h2 class="text-3xl font-bold" id="report-month">Rp 0</h2>
+                    </div>
+                    <div class="border-t border-gray-100 pt-4">
+                        <h4 class="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">Riwayat</h4>
+                        <div id="history-list" class="space-y-3 text-sm"></div>
+                    </div>
+                </div>
+                <button onclick="clearHistory()" class="mt-4 w-full py-3 rounded-xl font-bold text-red-500 bg-red-50 hover:bg-red-100 text-sm">Hapus Semua Riwayat</button>
+            </div>
+        </div>
+
+        <div id="history-detail-modal" class="fixed inset-0 bg-black/60 hidden items-end justify-center z-[55] backdrop-blur-sm transition-opacity">
+            <div class="bg-white w-full max-w-[480px] p-6 rounded-t-[30px] slide-up shadow-2xl h-[70dvh] flex flex-col">
+                <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4"></div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Detail Belanja</h3>
+                    <button onclick="closeHistoryDetailModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl mb-4 border border-gray-100">
+                    <p class="text-xs text-gray-500 mb-1">Waktu Transaksi</p>
+                    <p class="font-bold text-gray-800" id="detail-date">-</p>
+                </div>
+                <div class="flex-1 overflow-y-auto pr-1 mb-4">
+                    <div id="detail-items-list" class="space-y-2"></div>
+                </div>
+                <div class="border-t pt-4">
+                     <div class="flex justify-between items-center mb-4">
+                        <span class="font-bold text-gray-600">Total</span>
+                        <span class="font-bold text-xl text-green-600" id="detail-total">Rp 0</span>
+                     </div>
+                     <button id="btn-view-receipt-history" class="w-full py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-receipt"></i> Lihat / Cetak Struk
+                     </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="delete-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-xs p-6 rounded-3xl shadow-2xl text-center">
+                <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500 text-2xl"><i class="fas fa-trash-alt"></i></div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Hapus Barang?</h3>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Batal</button>
+                    <button onclick="confirmDelete()" class="flex-1 py-3 rounded-xl font-bold text-white bg-red-500 shadow-lg shadow-red-200">Hapus</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="celebration-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-[60] backdrop-blur-md p-6">
+            <div class="bg-white w-full max-w-sm p-8 rounded-[40px] shadow-2xl text-center relative overflow-hidden">
+                <div class="text-6xl mb-4 animate-bounce">🏆</div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Semua Beres!</h2>
+                <div class="bg-green-50 p-4 rounded-2xl mb-6 mt-4 border border-green-100">
+                    <p class="text-xs text-green-600 font-bold uppercase tracking-wide mb-1">Total Belanjaan</p>
+                    <p class="text-3xl font-extrabold text-green-700" id="celebration-total-price">Rp 0</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button onclick="openReceiptModal()" class="py-3 rounded-xl font-bold text-green-600 bg-green-50 hover:bg-green-100">Struk</button>
+                    <button onclick="closeCelebration()" class="py-3 rounded-xl font-bold text-white bg-gradient-to-r from-yellow-400 to-orange-500 shadow-xl">Tutup</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast">Berhasil!</div>
+    </div>
+
+    <script>
+        let items = [];
+        let expenseHistory = [];
+        try {
+            items = JSON.parse(localStorage.getItem('familyItems')) || [];
+            expenseHistory = JSON.parse(localStorage.getItem('familyExpenses')) || [];
+        } catch(e) { items = []; expenseHistory = []; }
+
+        let itemToDeleteIndex = null;
+        let itemToPriceIndex = null;
+        let itemToUncheckIndex = null;
+        let currentRequester = { name: 'Ayah', emoji: '👨🏻', colorClass: 'bg-blue-100 text-blue-700' };
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let currentDetailIndex = null; 
+
+        const listContainer = document.getElementById('shopping-list');
+        const emptyState = document.getElementById('empty-state');
+        const customReqInput = document.getElementById('custom-requester-input');
+        const priceModal = document.getElementById('price-modal');
+        const checklistPriceInput = document.getElementById('checklist-price-input');
+        const priceItemName = document.getElementById('price-item-name');
+        
+        const emojiMap = { 'ayam': '🍗', 'daging': '🥩', 'ikan': '🐟', 'telur': '🥚', 'susu': '🥛', 'kopi': '☕', 'beras': '🌾', 'minyak': '🌻', 'sayur': '🥬', 'buah': '🍇', 'sabun': '🧼', 'shampo': '🧴', 'odol': '🪥', 'galon': '💧', 'gas': '🔥', 'mie': '🍜','mie ayam': '🍜', 'cabe': '🌶️', 'snack': '🍿', 'rokok': '🚬', 'baju': '👕', 'celana': '👖', 'minuman': '🧋', 'roti': '🍞', 'tisu': '🧻', 'brokoli': '🥦', 'kentang': '🥔', 'terong': '🍆', 'ice cream': '🍦', 'galon': '💧', 'gas': '🔥', 'mie ayam': '🍜', 'kecap': '⚫',  'cabe': '🌶️', 'garam': '🧂', 'gula': '🍬', 'keju': '🧀',  'snack': '🍿', 'coklat': '🍫', 'es krim': '🍦',  'eskrim': '🍦', 'obat': '💊', 'sendal' : '🩴', 'sepatu': '👟' , 'topi' :'🧢', 'kacamata': '👓', 'payung': '🌂', 'tas': '🎒', 'pizza': '🍕', 'donat': '🍩', 'es': '🧊', 'es boba': '🧋', 'nasi': '🍚' };
+
+        function escapeHtml(text) { if(!text) return ""; return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+        const formatRupiah = (num) => new Intl.NumberFormat('id-ID', {style: 'currency', currency: 'IDR', minimumFractionDigits: 0}).format(num);
+        function formatRupiahTyping(input) { let value = input.value.replace(/\D/g, ''); input.value = value ? value.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : ""; }
+        function playSound(type) { if (audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime; if (type === 'add') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.1); osc.start(now); osc.stop(now+0.1); } else if (type === 'check') { osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.3); osc.start(now); osc.stop(now+0.3); } else if (type === 'delete') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gain.gain.linearRampToValueAtTime(0.01, now+0.2); osc.start(now); osc.stop(now+0.2); } else if (type === 'fanfare') { [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'triangle'; o.frequency.value = freq; g.gain.setValueAtTime(0.1, now + (i*0.1)); g.gain.exponentialRampToValueAtTime(0.01, now + (i*0.1) + 0.4); o.start(now + (i*0.1)); o.stop(now + (i*0.1) + 0.4); }); } }
+        function triggerHaptic() { if (navigator.vibrate) navigator.vibrate(15); }
+
+        function renderList() {
+            listContainer.innerHTML = '';
+            let totalSpent = 0; let countBought = 0;
+
+            if (items.length === 0) {
+                listContainer.appendChild(emptyState); emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                items.sort((a, b) => a.checked - b.checked);
+                
+                const total = items.length;
+                const checkedCount = items.filter(i => i.checked).length;
+
+                items.forEach((item, index) => {
+                    const itemPrice = parseInt(item.price) || 0;
+                    if(item.checked) { totalSpent += itemPrice; countBought++; }
+
+                    const div = document.createElement('div');
+                    const bgClass = item.checked ? 'bg-gray-50 border-gray-100' : 'bg-white border-green-50 shadow-sm';
+                    const opacityClass = item.checked ? 'opacity-70' : 'opacity-100';
+                    let displayIcon = '🛍️';
+                    for (let key in emojiMap) { if (item.itemName.toLowerCase().includes(key)) { displayIcon = emojiMap[key]; break; } }
+                    
+                    const priceLabel = item.checked ? formatRupiah(itemPrice) : "Belum Dibeli";
+                    const priceColor = item.checked ? 'text-green-600' : 'text-gray-400';
+
+                    div.className = `flex items-center p-4 mb-3 rounded-2xl border ${bgClass} ${opacityClass} transition-all duration-300`;
+                    div.innerHTML = `
+                        <div onclick="handleCheckClick(${index})" class="cursor-pointer mr-4"><div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-green-500 border-green-500' : 'border-gray-300'}">${item.checked ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}</div></div>
+                        <div class="flex-1 cursor-pointer" onclick="handleCheckClick(${index})">
+                            <h4 class="text-lg font-bold text-gray-800 ${item.checked ? 'line-through text-gray-400' : ''}">${displayIcon} ${escapeHtml(item.itemName)}</h4>
+                            <p class="text-sm font-bold ${priceColor} mt-0.5">${priceLabel}</p>
+                            <div class="flex items-center gap-2 mt-1"><span class="badge-user ${item.userColor}">${item.userEmoji} Nitip: ${escapeHtml(item.userName)}</span><span class="text-[10px] text-gray-400">• ${item.time}</span></div>
+                        </div>
+                        <button onclick="openDeleteModal(${index})" class="w-8 h-8 rounded-full flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors ml-2"><i class="fas fa-trash text-sm"></i></button>
+                    `;
+                    listContainer.appendChild(div);
+                });
+
+                if (total > 0 && checkedCount === total) {
+                    const bannerContainer = document.createElement('div');
+                    bannerContainer.className = 'flex flex-col gap-3 mb-4';
+                    
+                    // BANNER HIJAU (Status Selesai)
+                    const successBanner = `
+                        <div class="bg-green-100 border-2 border-green-200 text-green-700 px-4 py-3 rounded-2xl flex flex-col gap-3 shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0"><i class="fas fa-check"></i></div>
+                                <div><p class="font-bold text-sm">Semua Selesai!</p><p class="text-xs">Hati-hati di jalan, sampai jumpa!</p></div>
+                            </div>
+                            <button onclick="openReceiptModal()" class="w-full py-2 bg-white text-green-700 font-bold rounded-xl text-sm hover:bg-green-50">Lihat Struk Belanja</button>
+                        </div>
+                    `;
+
+                    // TOMBOL BIRU (Mulai Baru) - TERPISAH
+                    const refreshButton = `
+                        <button onclick="openResetModal()" class="w-full py-3 bg-blue-600 text-white font-bold rounded-2xl text-sm hover:bg-blue-700 shadow-lg shadow-blue-200 transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            Mulai Belanja Baru <i class="fas fa-redo-alt"></i>
+                        </button>
+                    `;
+
+                    bannerContainer.innerHTML = successBanner + refreshButton;
+                    listContainer.prepend(bannerContainer);
+                }
+            }
+            document.getElementById('total-spent').innerText = formatRupiah(totalSpent);
+            document.getElementById('item-count').innerText = countBought;
+            updateProgress(); saveData();
+        }
+
+        function addItem() {
+            triggerHaptic();
+            const input = document.getElementById('input-item');
+            const itemName = input.value.trim();
+            if (itemName) {
+                const now = new Date(); const time = now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+                if(customReqInput.value.trim()) currentRequester = {name:customReqInput.value, emoji:'👤', colorClass:'bg-gray-100'};
+                items.unshift({ itemName: itemName, checked: false, price: 0, time: time, userName: currentRequester.name, userEmoji: currentRequester.emoji, userColor: currentRequester.colorClass });
+                playSound('add'); input.value = ''; customReqInput.value = ''; closeModal(); renderList();
+            }
+        }
+
+        function handleCheckClick(index) {
+            triggerHaptic(); const item = items[index];
+            if (!item.checked) {
+                itemToPriceIndex = index; priceItemName.innerText = item.itemName; checklistPriceInput.value = '';
+                priceModal.classList.remove('hidden'); priceModal.classList.add('flex'); setTimeout(()=>checklistPriceInput.focus(),100);
+            } else { openCancelModal(index); }
+        }
+
+        function confirmItemPrice() {
+            if (itemToPriceIndex !== null) {
+                const val = checklistPriceInput.value.replace(/\./g,'');
+                items[itemToPriceIndex].price = val ? parseInt(val) : 0;
+                items[itemToPriceIndex].checked = true;
+                playSound('check');
+                priceModal.classList.add('hidden'); priceModal.classList.remove('flex'); itemToPriceIndex=null;
+                renderList();
+                const total = items.length; const checkedCount = items.filter(i => i.checked).length;
+                if (total > 0 && checkedCount === total) setTimeout(() => openCelebration(), 400);
+            }
+        }
+
+        function openCancelModal(index) { itemToUncheckIndex = index; document.getElementById('cancel-modal').classList.remove('hidden'); document.getElementById('cancel-modal').classList.add('flex'); }
+        function closeCancelModal() { document.getElementById('cancel-modal').classList.remove('flex'); document.getElementById('cancel-modal').classList.add('hidden'); itemToUncheckIndex = null; }
+        function confirmUncheck() { if (itemToUncheckIndex !== null) { items[itemToUncheckIndex].checked = false; renderList(); closeCancelModal(); } }
+
+        function openResetModal() { triggerHaptic(); document.getElementById('reset-modal').classList.remove('hidden'); document.getElementById('reset-modal').classList.add('flex'); }
+        function closeResetModal() { document.getElementById('reset-modal').classList.remove('flex'); document.getElementById('reset-modal').classList.add('hidden'); }
+        function confirmNewSession() {
+             closeResetModal(); closeCelebration();
+             const bought = items.filter(i=>i.checked);
+             if(bought.length > 0){
+                 const now = new Date(); let t=0; bought.forEach(i=>t+=parseInt(i.price)||0);
+                 expenseHistory.push({ date: now.toISOString().split('T')[0], timestamp: now.toISOString(), total: t, count: bought.length, items: bought.map(i => ({ name: i.itemName, price: i.price, user: i.userName })) });
+                 localStorage.setItem('familyExpenses', JSON.stringify(expenseHistory));
+                 showToast("Disimpan ke Riwayat");
+             }
+             items=[]; saveData(); renderList(); 
+        }
+
+        function openReportModal() { triggerHaptic(); const m = document.getElementById('report-modal'); m.classList.remove('hidden'); m.classList.add('flex'); updateReportUI(); }
+        function closeReportModal() { document.getElementById('report-modal').classList.remove('flex'); document.getElementById('report-modal').classList.add('hidden'); }
+        
+        function openReceiptModal() { 
+            const total = items.length; const checkedCount = items.filter(i => i.checked).length;
+            if (total === 0 || checkedCount < total) { alert("Selesaikan semua belanjaan dulu baru bisa lihat struk!"); return; }
+            triggerHaptic(); 
+            const m = document.getElementById('receipt-modal'); m.classList.remove('hidden'); m.classList.add('flex'); 
+            renderReceiptContent(items.filter(i=>i.checked), new Date().toLocaleString('id-ID')); 
+        }
+
+        function renderReceiptContent(dataItems, dateString) {
+             const tbody = document.getElementById('receipt-items-body'); const totalEl = document.getElementById('receipt-total');
+             document.getElementById('receipt-date').innerText = `Tanggal: ${dateString}`;
+             let html=''; let total=0;
+             dataItems.forEach(i=>{ const price = parseInt(i.price)||0; total += price; html+=`<tr><td class="col-item">${escapeHtml(i.itemName)}</td><td class="col-user">${escapeHtml(i.userName)}</td><td class="col-price">${price > 0 ? formatRupiah(price) : '-'}</td></tr>`; });
+             tbody.innerHTML = html || '<tr><td colspan="3" class="text-center italic opacity-50 py-4">Data tidak lengkap</td></tr>'; totalEl.innerText = formatRupiah(total);
+        }
+
+        function closeReceiptModal() { document.getElementById('receipt-modal').classList.remove('flex'); document.getElementById('receipt-modal').classList.add('hidden'); }
+        
+        function updateReportUI() { 
+            const now = new Date(); const todayStr = now.toISOString().split('T')[0];
+            let totalToday=0; let totalMonth=0; const currentMonth = now.getMonth(); const currentYear = now.getFullYear();
+            let historyHTML = '';
+            let activeTotal = 0; let activeCount = 0;
+            items.forEach(item => { if (item.checked) { activeTotal += (parseInt(item.price) || 0); activeCount++; } });
+            if (activeTotal > 0) { totalToday += activeTotal; totalMonth += activeTotal; historyHTML += `<div class="flex justify-between items-center py-3 border-b border-green-100 bg-green-50/50 rounded-lg px-2 mb-2"><div><p class="font-bold text-green-700">Sedang Berjalan 🛒</p><p class="text-xs text-green-500">${activeCount} Barang</p></div><p class="font-bold text-green-700">${formatRupiah(activeTotal)}</p></div>`; }
+            const sortedHistory = [...expenseHistory].reverse();
+            if (sortedHistory.length === 0) { historyHTML = '<p class="text-gray-400 text-center italic py-4">Belum ada riwayat belanja.</p>'; } else {
+                sortedHistory.forEach((record, index) => {
+                    const recDate = new Date(record.date);
+                    if(record.date === todayStr) totalToday += record.total;
+                    if(recDate.getMonth()===currentMonth && recDate.getFullYear()===currentYear) totalMonth += record.total;
+                    const dateDisplay = recDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const timeDisplay = record.timestamp ? new Date(record.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}).replace('.',':') : '';
+                    historyHTML += `<div onclick="openHistoryDetail(${index})" class="py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors active:scale-95"><div class="flex justify-between items-center"><div><div class="flex items-center gap-2"><p class="font-bold text-gray-700">${dateDisplay}</p>${timeDisplay ? `<span class="text-xs text-gray-400 font-normal bg-gray-100 px-1.5 py-0.5 rounded-md">${timeDisplay}</span>` : ''}</div><p class="text-xs text-gray-400 mt-1">${record.count} Barang <span class="text-[10px] ml-1 text-blue-500">(Klik untuk detail)</span></p></div><div class="text-right"><p class="font-bold text-gray-600">${formatRupiah(record.total)}</p><i class="fas fa-chevron-right text-gray-300 text-xs mt-1"></i></div></div></div>`;
+                });
+            }
+            document.getElementById('report-today').innerText = formatRupiah(totalToday); document.getElementById('report-month').innerText = formatRupiah(totalMonth); document.getElementById('history-list').innerHTML = historyHTML;
+        }
+
+        function openHistoryDetail(reversedIndex) {
+            triggerHaptic(); const realIndex = expenseHistory.length - 1 - reversedIndex; const record = expenseHistory[realIndex]; currentDetailIndex = realIndex;
+            const dateDisplay = new Date(record.date).toLocaleDateString('id-ID', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
+            const timeDisplay = record.timestamp ? new Date(record.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}).replace('.',':') : '';
+            document.getElementById('detail-date').innerText = `${dateDisplay} ${timeDisplay ? '• ' + timeDisplay : ''}`; document.getElementById('detail-total').innerText = formatRupiah(record.total);
+            const listEl = document.getElementById('detail-items-list'); let listHtml = '';
+            if (record.items && record.items.length > 0) {
+                record.items.forEach(item => {
+                    let name = item; let price = 0; let user = '-';
+                    if (typeof item === 'object') { name = item.name; price = parseInt(item.price) || 0; user = item.user; }
+                    listHtml += `<div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"><div class="flex-1"><p class="font-bold text-sm text-gray-700">${escapeHtml(name)}</p><p class="text-[10px] text-gray-400">Nitip: ${escapeHtml(user)}</p></div><p class="font-bold text-sm text-gray-600">${price > 0 ? formatRupiah(price) : '-'}</p></div>`;
+                });
+            } else { listHtml = '<p class="text-sm text-gray-400 italic text-center">Detail barang tidak tersedia untuk riwayat lama.</p>'; }
+            listEl.innerHTML = listHtml; document.getElementById('btn-view-receipt-history').onclick = function() { viewHistoryReceipt(realIndex); };
+            document.getElementById('history-detail-modal').classList.remove('hidden'); document.getElementById('history-detail-modal').classList.add('flex');
+        }
+
+        function closeHistoryDetailModal() { document.getElementById('history-detail-modal').classList.remove('flex'); document.getElementById('history-detail-modal').classList.add('hidden'); }
+
+        function viewHistoryReceipt(realIndex) {
+            triggerHaptic(); const record = expenseHistory[realIndex]; let historyItems = [];
+            if (record.items && record.items.length > 0) { historyItems = record.items.map(i => { if (typeof i === 'object') { return { itemName: i.name, userName: i.user || '-', price: i.price }; } else { return { itemName: i, userName: '-', price: 0 }; } }); }
+            const recDate = new Date(record.date).toLocaleDateString('id-ID', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
+            const recTime = record.timestamp ? new Date(record.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}).replace('.',':') : '';
+            const m = document.getElementById('receipt-modal'); m.classList.remove('hidden'); m.classList.add('flex');
+            renderReceiptContent(historyItems, `${recDate} ${recTime}`);
+        }
+
+        function saveAsImage() { triggerHaptic(); html2canvas(document.getElementById("receipt-content"), { scale: 2 }).then(c => { const a = document.createElement("a"); a.download = "Struk-KeranjangKita.jpg"; a.href = c.toDataURL(); a.click(); }); }
+        
+        function printReceipt() { 
+            triggerHaptic(); const content = document.getElementById("receipt-content").innerHTML; const w = window.open('', '', 'height=600,width=400');
+            w.document.write('<html><head><title>Struk Belanja</title>'); w.document.write(`<style> body { font-family: 'Courier New', monospace; padding: 20px; text-align: center; } .receipt-paper { max-width: 300px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; } h2 { margin: 0; font-size: 18px; text-transform: uppercase; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; } .receipt-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; } .receipt-table td { padding: 5px 0; border-bottom: 1px dashed #ccc; } .col-item { width: 50%; } .col-user { width: 20%; text-align: right; color: #666; font-size: 10px; } .col-price { width: 30%; text-align: right; font-weight: bold; } .total-section { margin-top: 15px; border-top: 2px dashed #000; padding-top: 10px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; } .footer { margin-top: 20px; font-size: 10px; color: #888; } <\/style>`); 
+            w.document.write('<\/head><body>'); w.document.write('<div class="receipt-paper">'); w.document.write(content); w.document.write('<\/div>'); w.document.write('<\/body><\/html>'); w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 500);
+        }
+        
+        function copyReceiptText() { 
+            triggerHaptic(); const date = document.getElementById('receipt-date').innerText; const rows = document.querySelectorAll('#receipt-items-body tr'); const total = document.getElementById('receipt-total').innerText;
+            let text = "🛒 *STRUK KERANJANG KITA*\n------------------\n"; text += date + "\n\n";
+            rows.forEach(row => { const item = row.querySelector('.col-item')?.innerText || ''; const user = row.querySelector('.col-user')?.innerText || ''; const price = row.querySelector('.col-price')?.innerText || ''; if(item) text += `${item} (${user}) : ${price}\n`; });
+            text += "------------------\n"; text += `TOTAL: ${total}\n\n`; text += "App by Keranjang Kita";
+            navigator.clipboard.writeText(text).then(() => showToast("Teks Struk Disalin!"));
+        }
+
+        function showToast(m) { const t=document.getElementById("toast"); t.innerText=m; t.className="show"; setTimeout(()=>t.className="",3000); }
+        function clearHistory() { if(confirm('Hapus semua riwayat belanja?')){expenseHistory=[];localStorage.setItem('familyExpenses',JSON.stringify([]));updateReportUI();} }
+        function openModal() { triggerHaptic(); document.getElementById('modal').classList.remove('hidden'); document.getElementById('modal').classList.add('flex'); setTimeout(()=>document.getElementById('input-item').focus(),100); }
+        function closeModal() { document.getElementById('modal').classList.remove('flex'); document.getElementById('modal').classList.add('hidden'); }
+        function openDeleteModal(index) { triggerHaptic(); itemToDeleteIndex=index; document.getElementById('delete-modal').classList.remove('hidden'); document.getElementById('delete-modal').classList.add('flex'); }
+        function closeDeleteModal() { document.getElementById('delete-modal').classList.remove('flex'); document.getElementById('delete-modal').classList.add('hidden'); itemToDeleteIndex=null; }
+        function confirmDelete() { if(itemToDeleteIndex!==null){ items.splice(itemToDeleteIndex,1); playSound('delete'); renderList(); closeDeleteModal(); } }
+        function openCelebration() { playSound('fanfare'); let t=0; items.forEach(i=>{if(i.checked)t+=(parseInt(i.price)||0)}); document.getElementById('celebration-total-price').innerText=formatRupiah(t); document.getElementById('celebration-modal').classList.remove('hidden'); document.getElementById('celebration-modal').classList.add('flex'); }
+        function closeCelebration() { document.getElementById('celebration-modal').classList.remove('flex'); document.getElementById('celebration-modal').classList.add('hidden'); }
+        function updateProgress() { const t=items.length; const c=items.filter(i=>i.checked).length; const p=t===0?0:Math.round((c/t)*100); document.getElementById('progress-text').innerText=`${c}/${t} Selesai`; document.getElementById('progress-percent').innerText=`${p}%`; document.getElementById('progress-bar').style.width=`${p}%`; }
+        function saveData() { localStorage.setItem('familyItems', JSON.stringify(items)); }
+        function selectRequester(name, emoji, colorClass, btn) { triggerHaptic(); currentRequester = { name, emoji, colorClass }; document.querySelectorAll('.requester-option').forEach(b => b.classList.remove('active')); btn.classList.add('active'); customReqInput.value = ''; }
+        function handleCustomRequester(input) { const val = input.value.trim(); if (val.length > 0) { currentRequester = { name: val, emoji: '👤', colorClass: 'bg-gray-100 text-gray-700' }; document.querySelectorAll('.requester-option').forEach(b => b.classList.remove('active')); } }
+
+        checklistPriceInput.addEventListener('keypress', (e)=>{if(e.key==='Enter')confirmItemPrice()});
+        document.getElementById('input-item').addEventListener('keypress', (e)=>{if(e.key==='Enter')addItem()});
+        
+        window.onclick = function(e) {
+            if(e.target==document.getElementById('modal')) closeModal();
+            if(e.target==document.getElementById('delete-modal')) closeDeleteModal();
+            if(e.target==document.getElementById('cancel-modal')) closeCancelModal();
+            if(e.target==document.getElementById('celebration-modal')) closeCelebration();
+            if(e.target==document.getElementById('report-modal')) closeReportModal();
+            if(e.target==document.getElementById('receipt-modal')) closeReceiptModal();
+            if(e.target==document.getElementById('history-detail-modal')) closeHistoryDetailModal();
+            if(e.target==document.getElementById('reset-modal')) closeResetModal();
+        }
+        const styleSheet = document.createElement("style"); styleSheet.innerText = `@keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }`; document.head.appendChild(styleSheet);
+        renderList();
+    </script>
+</body>
+</html>
