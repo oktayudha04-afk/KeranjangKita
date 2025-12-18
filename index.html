@@ -44,7 +44,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <p class="text-green-100 text-xs mb-1 font-semibold tracking-wider">Gak Ada Lagi Drama 'Lupa Tititpan'</p>
-                        <h1 class="text-2xl font-bold">KeranjangKita 🛒</h1>
+                        <h1 class="text-2xl font-bold">Keranjang Kita 🛒</h1>
                     </div>
                     <div class="flex gap-2">
                         <button onclick="openReportModal()" class="bg-white/20 hover:bg-white/30 p-2 rounded-full backdrop-blur-sm active:scale-90 transition-transform"><i class="fas fa-chart-pie text-white"></i></button>
@@ -283,7 +283,7 @@
         const checklistPriceInput = document.getElementById('checklist-price-input');
         const priceItemName = document.getElementById('price-item-name');
         
-        const emojiMap = { 'ayam': '🍗', 'daging': '🥩', 'ikan': '🐟', 'telur': '🥚', 'susu': '🥛', 'kopi': '☕', 'beras': '🌾', 'minyak': '🌻', 'sayur': '🥬', 'buah': '🍇', 'sabun': '🧼', 'shampo': '🧴', 'odol': '🪥', 'galon': '💧', 'gas': '🔥', 'mie': '🍜','mie ayam': '🍜', 'cabe': '🌶️', 'snack': '🍿', 'rokok': '🚬', 'baju': '👕', 'celana': '👖', 'minuman': '🧋', 'roti': '🍞', 'tisu': '🧻', 'brokoli': '🥦', 'kentang': '🥔', 'terong': '🍆', 'ice cream': '🍦', 'galon': '💧', 'gas': '🔥', 'mie ayam': '🍜', 'kecap': '⚫',  'cabe': '🌶️', 'garam': '🧂', 'gula': '🍬', 'keju': '🧀',  'snack': '🍿', 'coklat': '🍫', 'es krim': '🍦',  'eskrim': '🍦', 'obat': '💊', 'sendal' : '🩴', 'sepatu': '👟' , 'topi' :'🧢', 'kacamata': '👓', 'payung': '🌂', 'tas': '🎒', 'pizza': '🍕', 'donat': '🍩', 'es': '🧊', 'es boba': '🧋', 'nasi': '🍚' };
+        const emojiMap = { 'ayam': '🍗', 'daging': '🥩', 'ikan': '🐟', 'telur': '🥚', 'susu': '🥛', 'kopi': '☕', 'beras': '🌾', 'minyak': '🌻', 'sayur': '🥬', 'buah': '🍇', 'sabun': '🧼', 'shampo': '🧴', 'odol': '🪥', 'galon': '💧', 'air': '💧', 'gas': '🔥', 'mie': '🍜','mie ayam': '🍜', 'cabe': '🌶️', 'snack': '🍿', 'rokok': '🚬', 'baju': '👕', 'celana': '👖', 'minuman': '🧋', 'roti': '🍞', 'tisu': '🧻', 'brokoli': '🥦', 'kentang': '🥔', 'terong': '🍆', 'ice cream': '🍦', 'aer': '💧', 'korek':'🔥', 'api': '🔥', 'mie ayam': '🍜', 'kecap': '⚫',  'cabe': '🌶️', 'garam': '🧂', 'gula': '🍬', 'keju': '🧀',  'snack': '🍿', 'coklat': '🍫', 'es krim': '🍦',  'eskrim': '🍦', 'obat': '💊', 'sendal' : '🩴', 'sepatu': '👟' , 'topi' :'🧢', 'kacamata': '👓', 'payung': '🌂', 'tas': '🎒', 'pizza': '🍕', 'donat': '🍩', 'es': '🧊', 'es boba': '🧋', 'nasi': '🍚' };
 
         function escapeHtml(text) { if(!text) return ""; return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
         const formatRupiah = (num) => new Intl.NumberFormat('id-ID', {style: 'currency', currency: 'IDR', minimumFractionDigits: 0}).format(num);
